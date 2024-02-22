@@ -1,37 +1,59 @@
 Imports System.Collections.Generic
+Imports System.Data.OleDb
 Imports System.Data.SqlClient
 Imports System.Security
 Imports System.Security.Principal.WindowsIdentity
 Imports System.Text
-
+Imports System.Text.RegularExpressions
+Imports UseThisBOG.bogHelper
 Public Class frmGenerate
     Inherits System.Windows.Forms.Form
 
 #Region "Fields"
-
+    Friend WithEvents btnEntity As System.Windows.Forms.Button
     Friend WithEvents btnGenFunction As System.Windows.Forms.Button
     Friend WithEvents btnHTML As System.Windows.Forms.Button
+    Friend WithEvents btnLoadSQL As Button
+    Friend WithEvents cboClassLang As System.Windows.Forms.ComboBox
+    Friend WithEvents cboJSFramework As ComboBox
+    Friend WithEvents cboPageType As System.Windows.Forms.ComboBox
     Friend WithEvents cboTypes As System.Windows.Forms.ComboBox
+    Friend WithEvents cboUIFramework As System.Windows.Forms.ComboBox
     Friend WithEvents chkButtons As System.Windows.Forms.CheckBox
+    Friend WithEvents chkColumn As System.Windows.Forms.DataGridViewCheckBoxColumn
     Friend WithEvents chkDelete As System.Windows.Forms.CheckBox
+    Friend WithEvents chkEditable As CheckBox
     Friend WithEvents chkInsert As System.Windows.Forms.CheckBox
     Friend WithEvents chkJson As System.Windows.Forms.CheckBox
     Friend WithEvents chkSelect As System.Windows.Forms.CheckBox
+    Friend WithEvents chkUseTable As System.Windows.Forms.CheckBox
     Friend WithEvents cmbDatabase As System.Windows.Forms.ComboBox
+    Friend WithEvents dgvDetails As System.Windows.Forms.DataGridView
+    Friend WithEvents gbSQL As GroupBox
+    Friend WithEvents GroupBox1 As System.Windows.Forms.GroupBox
 
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.
     'Do not modify it using the code editor.
     Friend WithEvents GroupBox2 As System.Windows.Forms.GroupBox
+    Friend WithEvents GroupBox3 As System.Windows.Forms.GroupBox
     Friend WithEvents GroupBox4 As System.Windows.Forms.GroupBox
     Friend WithEvents GroupBox5 As System.Windows.Forms.GroupBox
+    Friend WithEvents GroupBox6 As System.Windows.Forms.GroupBox
+    Friend WithEvents GroupBox7 As GroupBox
     Friend WithEvents Label1 As System.Windows.Forms.Label
     Friend WithEvents Label2 As System.Windows.Forms.Label
     Friend WithEvents Label3 As System.Windows.Forms.Label
+    Friend WithEvents Label4 As System.Windows.Forms.Label
     Friend WithEvents lblUser As System.Windows.Forms.Label
     Friend WithEvents lstDetails As System.Windows.Forms.ListBox
     Friend WithEvents scMain As System.Windows.Forms.SplitContainer
     Friend WithEvents scMain2 As System.Windows.Forms.SplitContainer
+    Friend WithEvents tcMain As TabControl
+    Friend WithEvents tpClass As TabPage
+    Friend WithEvents tpHTML As TabPage
+    Friend WithEvents tpSQL As TabPage
+    Friend WithEvents txtSQL As TextBox
 
     'Required by the Windows Form Designer
     Private components As System.ComponentModel.IContainer
@@ -47,25 +69,8 @@ Public Class frmGenerate
     Dim SQLConnection As SqlClient.SqlConnection
     Dim SQLDataAdapter As SqlClient.SqlDataAdapter
     Dim SqlParam As SqlClient.SqlParameter
-    Friend WithEvents Label4 As System.Windows.Forms.Label
-    Friend WithEvents GroupBox6 As System.Windows.Forms.GroupBox
-    Friend WithEvents cboClassLang As System.Windows.Forms.ComboBox
-    Friend WithEvents btnEntity As System.Windows.Forms.Button
-    Friend WithEvents chkClassMethods As System.Windows.Forms.CheckBox
-    Friend WithEvents dgvDetails As System.Windows.Forms.DataGridView
-    Friend WithEvents chkColumn As System.Windows.Forms.DataGridViewCheckBoxColumn
-    Friend WithEvents cboUIFramework As System.Windows.Forms.ComboBox
-    Friend WithEvents chkUseTable As System.Windows.Forms.CheckBox
-    Friend WithEvents GroupBox1 As System.Windows.Forms.GroupBox
-    Friend WithEvents GroupBox3 As System.Windows.Forms.GroupBox
-    Friend WithEvents cboPageType As System.Windows.Forms.ComboBox
-    Friend WithEvents TabControl1 As TabControl
-    Friend WithEvents TabPage1 As TabPage
-    Friend WithEvents TabPage2 As TabPage
-    Friend WithEvents TabPage3 As TabPage
-    Friend WithEvents chkEditable As CheckBox
-    Friend WithEvents GroupBox7 As GroupBox
-    Friend WithEvents cboJSFramework As ComboBox
+    Friend WithEvents chkUseAutoProp As CheckBox
+    Friend WithEvents grpItems As GroupBox
     Dim strFunctionText As StringBuilder
 
 #End Region 'Fields
@@ -95,21 +100,25 @@ Public Class frmGenerate
         MyBase.Dispose(disposing)
     End Sub
 
-
     Private Sub btnEntity_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnEntity.Click
         strFunctionText = New StringBuilder
 
-        If Not IsNothing(lstDetails.SelectedItem) Then
+        If Not IsNothing(lstDetails.SelectedItem) OrElse cboTypes.SelectedItem.ToString.ToLower = "sql" Then
             Select Case cboTypes.SelectedItem.ToString.ToLower
                 Case "tables", "views"
-                    GenerateEntity()
+                    strFunctionText.Append(GenerateEntity(lstDetails.SelectedItem.ToString(), dgvDetails, cboClassLang.SelectedItem.ToString, chkUseAutoProp.Checked))
+
 
                 Case "procedures"
                     'Generates Vb function to call selected Stored procedure
                     GenerateFunction()
-
+                Case "sql"
+                    'GenerateSQL()
+                    strFunctionText.Append(GenerateEntity("test", dgvDetails, cboClassLang.SelectedItem.ToString, chkUseAutoProp.Checked))
             End Select
-
+            Dim r As New frmResults
+            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = strFunctionText.ToString, .ResultName = "Class Object"})
+            r.Show()
         Else
             MsgBox("Nothing selected")
         End If
@@ -124,17 +133,15 @@ Public Class frmGenerate
 
         strFunctionText = New StringBuilder
         If chkInsert.Checked Then
-            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateInsert(), .ResultName = "SQL INSERT"})
+            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateInsert(lstDetails.SelectedItem.ToString(), dgvDetails, dsColumns), .ResultName = "SQL INSERT"})
         End If
         If chkDelete.Checked Then
-            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateDelete(), .ResultName = "SQL DELETE"})
+            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateDelete(lstDetails.SelectedItem.ToString(), dgvDetails), .ResultName = "SQL DELETE"})
         End If
 
         If chkSelect.Checked Then
-            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateSelect(), .ResultName = "SQL SELECT"})
+            r.FormResults.Add(New frmResults.resultObject() With {.ResultText = GenerateSelect(lstDetails.SelectedItem.ToString()), .ResultName = "SQL SELECT"})
         End If
-
-
 
         r.Show()
         'writeStatus("Stored procedure generated successfully.")
@@ -151,7 +158,6 @@ Public Class frmGenerate
             MsgBox("Nothing selected")
         End If
     End Sub
-
 
     Private Sub cboTypes_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles cboTypes.SelectedIndexChanged
         CreateDataset()
@@ -176,12 +182,16 @@ Public Class frmGenerate
         End If
     End Sub
 
+
+
     Private Sub cmbDatabase_SelectionChangeCommitted(ByVal sender As Object, ByVal e As System.EventArgs) Handles cmbDatabase.SelectionChangeCommitted
         Try
             CreateDataset()
             lstDetails.DataSource = Nothing
             cboTypes.SelectedIndex = 0
             loadObjectTypes()
+            cboTypes.Visible = True
+            lstDetails.Visible = True
 
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -198,7 +208,23 @@ Public Class frmGenerate
                 PopulateColumns(2)
         End Select
     End Sub
-
+    ''' <summary>
+    ''' Populate a Listbox with a databases table names
+    ''' </summary>
+    ''' <param name="ConnectionString">database connection string</param>
+    ''' <param name="TablesListBox">Listbox to populate with table names</param>
+    ''' <remarks></remarks>
+    Public Sub GetAllTableNames(ByVal ConnectionString As String, ByVal TablesListBox As ListBox)
+        TablesListBox.DataSource = Nothing
+        Using cn As New OleDbConnection(ConnectionString)
+            cn.Open()
+            Dim DatabaseSchema As New DataTable
+            DatabaseSchema = cn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables,
+                                                    New Object() {Nothing, Nothing, Nothing, "TABLE"})
+            TablesListBox.DisplayMember = "TABLE_NAME"
+            TablesListBox.DataSource = DatabaseSchema
+        End Using
+    End Sub
     Private Sub CreateDataset()
         Dim j, i As Integer
         dsDetails = New DataSet
@@ -209,20 +235,46 @@ Public Class frmGenerate
             If IsNothing(cboTypes.SelectedItem) Then
                 cboTypes.SelectedIndex = 0
             End If
+
+            Dim newConn As String = ""
+            'change command text to system stored procedure
+            If mdiMain.UtilityConnectionString.IndexOf("Catalog") > 0 Then
+                'replace database
+                Dim pattern As String = "Initial Catalog=[a-zA-Z]+\;"
+                Dim replacement As String = String.Format("Initial Catalog={0};", cmbDatabase.SelectedItem.ToString())
+                Dim Input As String = mdiMain.UtilityConnectionString
+                newConn = Regex.Replace(Input, pattern, replacement)
+
+            ElseIf mdiMain.UtilityConnectionString.IndexOf("Database") > 0 Then
+                'replace database
+                Dim pattern As String = "Database=[a-zA-Z]+\;"
+                Dim replacement As String = String.Format("Database={0};", cmbDatabase.SelectedItem.ToString())
+                Dim Input As String = mdiMain.UtilityConnectionString
+                newConn = Regex.Replace(Input, pattern, replacement)
+            Else
+                newConn = mdiMain.UtilityConnectionString & ";Database=" & cmbDatabase.SelectedItem.ToString()
+            End If
+
+            mdiMain.UtilityConnectionString = newConn
+            SQLDataAdapter.SelectCommand.Connection.ConnectionString = mdiMain.UtilityConnectionString
+
             Select Case cboTypes.SelectedItem.ToString.ToLower
                 Case "tables"
 
                     Try
-                        'change command text to system stored procedure
-                        SQLDataAdapter.SelectCommand.Connection.ConnectionString = mdiMain.UtilityConnectionString & ";Database=" & cmbDatabase.SelectedItem.ToString()
-                        SQLDataAdapter.SelectCommand.CommandText = "sp_tables"
+                        Dim dt As DataTable = DataHelper.GetDataTable("sp_tables", CommandType.StoredProcedure)
+
+                        'SQLDataAdapter.SelectCommand.Connection.ConnectionString = mdiMain.UtilityConnectionString
+                        'SQLDataAdapter.SelectCommand.CommandText = "sp_tables"
 
                         'Get tables from selected datebase
-                        SQLDataAdapter.Fill(dsTables, "Tables")
+                        'SQLDataAdapter.Fill(dsTables, "Tables")
 
                         'Code to filter System tables and views by selecting only user tables
-                        arrDataRows = dsTables.Tables("Tables").Select("TABLE_TYPE in ('TABLE')")
-                        dtTables = dsTables.Tables("Tables").Clone()
+                        'arrDataRows = dsTables.Tables("Tables").Select("TABLE_TYPE in ('TABLE')")
+                        arrDataRows = dt.Select("TABLE_TYPE in ('TABLE')")
+
+                        dtTables = dt.Clone ' dsTables.Tables("Tables").Clone()
                         dsTables = Nothing
                         dtTables.TableName = "Tables"
                         If arrDataRows.GetUpperBound(0) <= 0 Then
@@ -251,7 +303,7 @@ Public Class frmGenerate
                     Try
 
                         'change command text to system stored procedure
-                        SQLDataAdapter.SelectCommand.Connection.ConnectionString = mdiMain.UtilityConnectionString & ";Database=" & cmbDatabase.SelectedItem.ToString()
+                        'SQLDataAdapter.SelectCommand.Connection.ConnectionString = mdiMain.UtilityConnectionString & ";Database=" & cmbDatabase.SelectedItem.ToString()
                         SQLDataAdapter.SelectCommand.CommandText = "sp_tables"
 
                         'Get tables from selected datebase
@@ -309,7 +361,6 @@ Public Class frmGenerate
                     End Try
             End Select
 
-
         End If
     End Sub
 
@@ -322,7 +373,6 @@ Public Class frmGenerate
         'Row selection is not required when entity class is generated.
         Dim i As Integer
         Dim htInfo As DataGrid.HitTestInfo
-
 
         For i = 0 To intGridRowCount - 1
             Try
@@ -343,6 +393,15 @@ Public Class frmGenerate
         'End If
     End Sub
 
+    Private Sub dgvDetails_ColumnHeaderMouseClick(sender As Object, e As DataGridViewCellMouseEventArgs) Handles dgvDetails.ColumnHeaderMouseClick
+        If e.ColumnIndex = 0 Then
+            For Each row As DataGridViewRow In dgvDetails.Rows
+                row.Cells(0).Value = If(row.Cells(0).Value = True, False, True)
+            Next
+
+        End If
+    End Sub
+
     Private Sub frmUtilities_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         Try
             cboClassLang.SelectedIndex = 0
@@ -353,8 +412,8 @@ Public Class frmGenerate
             'Prepare SQL Connection
             SQLConnection = New SqlClient.SqlConnection(mdiMain.UtilityConnectionString)
             SQLCommand = New SqlClient.SqlCommand
-            SQLCommand.CommandText = "sp_databases"
-            SQLCommand.CommandType = CommandType.StoredProcedure
+            SQLCommand.CommandText = "SELECT * FROM sys.databases" '"sp_databases"
+            SQLCommand.CommandType = CommandType.Text
 
             'SQl Data Adapter
             SQLDataAdapter = New SqlClient.SqlDataAdapter
@@ -368,7 +427,7 @@ Public Class frmGenerate
 
             Using dt As DataTable = dsDatabases.Tables("Database")
                 For Each dr As DataRow In dt.Rows
-                    cmbDatabase.Items.Add(dr("DATABASE_NAME").ToString)
+                    cmbDatabase.Items.Add(dr("Name").ToString)
                 Next
             End Using
             Dim builder As New SqlConnectionStringBuilder(mdiMain.UtilityConnectionString)
@@ -382,8 +441,6 @@ Public Class frmGenerate
                 Next
             End If
 
-
-
             CreateDataset()
             PrepareTableStyles()
             mdiMain.mainStatus.Text = "Connection Success!!..." & mdiMain.UtilityConnectionString
@@ -393,149 +450,12 @@ Public Class frmGenerate
             cboPageType.SelectedIndex = 0
             cboUIFramework.SelectedIndex = 1
 
-
         Catch ex As Exception
             MsgBox(ex.Message)
 
         End Try
     End Sub
 
-
-    Private Function GenerateDelete() As String
-        Dim strBld As New StringBuilder
-        Dim itemChecked As Integer = 0
-        Dim intI As Integer
-        Dim blnNotPrimary As Boolean = False
-        Dim strColumnName As String
-        'Start of comments
-        strBld.AppendFormat("--Created on {0}" & vbCrLf, Now.ToString)
-        strBld.Append("--Autogenerated by UseThisBOG " & vbCrLf & vbCrLf)
-        'End of comments
-
-        strBld.AppendFormat("CREATE PROCEDURE [stp_{0}_Delete]" & vbCrLf, lstDetails.SelectedItem.ToString())
-        strBld.Append("(" & vbCrLf)
-        'Variable definitions
-        intI = 0
-        For intI = 0 To intGridRowCount - 1
-
-            If dgvDetails.Rows(intI).Cells(0).Value = True Then
-                strBld.Append("@" & dgvDetails.Item("Column_Name", intI).Value)
-                strBld.Append(Space(35 - Len(dgvDetails.Item("Column_Name", intI).Value)))
-                Select Case dgvDetails.Item("Type_Name", intI).ToString
-                    Case "int", "ntext", "text", "datetime", "date", "smallint", "decimal"
-                        strBld.Append(dgvDetails.Item("Type_Name", intI).Value() & "," & vbCrLf)
-
-                    Case Else
-                        strBld.Append(dgvDetails.Item("Type_Name", intI).Value & "(")
-                        strBld.Append(dgvDetails.Item("Precision", intI).Value & ")," & vbCrLf)
-                End Select
-            End If
-
-        Next
-
-        'Remova last ","
-        strBld.Remove(strBld.Length - 3, 2)
-
-        strBld.Append(vbCrLf)
-        strBld.Append(")")
-        strBld.Append(vbCrLf)
-        strBld.Append("AS")
-        strBld.Append(vbCrLf)
-        strBld.Append("BEGIN")
-        strBld.Append(vbCrLf)
-        'Body of the procedure
-        strBld.Append(Space(7) & "DELETE FROM " & lstDetails.SelectedItem.ToString() & vbCrLf)
-        strBld.Append(Space(7) & "WHERE" & vbCrLf)
-        intI = 0
-        For intI = 0 To intGridRowCount - 1
-            If dgvDetails.Rows(intI).Cells(0).Value = True Then
-                If intI <> 0 Then strBld.Append(" and " & vbCrLf)
-                strColumnName = dgvDetails.Item("Column_Name", intI).Value 'dsColumns.Tables("Pkeys").Rows(intI).Item("COLUMN_NAME").ToString()
-                strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName)
-            End If
-        Next
-
-        strBld.Append(vbCrLf)
-        strBld.Append("END")
-        strBld.Append(vbCrLf)
-
-        'Body ends
-        strBld.Append("Go")
-        strFunctionText.Append(strBld.ToString)
-        strBld = Nothing
-
-        Return strFunctionText.ToString
-    End Function
-
-
-    Private Sub GenerateEntity()
-        Dim strBuilder As New StringBuilder
-        Dim strEntityName As String
-
-        strEntityName = InputBox("Enter Entity Name", "Entity", lstDetails.SelectedItem.ToString())
-
-        'validate entity name
-        If strEntityName = "" Then
-            MsgBox("Please enter valid name for Entity")
-            Exit Sub
-        End If
-
-        strBuilder.Append("Public class " & strEntityName & vbCrLf)
-        If chkClassMethods.Checked Then
-            strBuilder.Append("#Region ""Public Methods "" " & vbCrLf)
-            strBuilder.AppendFormat("Public Shared Function GetAll() as {0}()" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Dim lst as New List(Of {0})" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Return lst.ToArray" & Environment.NewLine)
-            strBuilder.AppendLine("End Function" & Environment.NewLine)
-            strBuilder.AppendFormat("Public Shared Function Find(id as Integer) as {0}" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Dim itm as New {0}" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Return itm" & Environment.NewLine)
-            strBuilder.AppendLine("End Function" & Environment.NewLine)
-            strBuilder.AppendFormat("Public Shared Function InsertUpdate(Itm as {0}) as {0}" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Dim newItm as New {0}" & Environment.NewLine, strEntityName)
-            strBuilder.AppendFormat(vbTab & "Return newItm" & Environment.NewLine)
-            strBuilder.AppendLine("End Function" & Environment.NewLine)
-            strBuilder.AppendFormat("Public Shared Sub Delete(Itm as {0})" & Environment.NewLine, strEntityName)
-            strBuilder.AppendLine("End Sub")
-            strBuilder.Append(vbCrLf)
-            strBuilder.Append("# end Region " & vbCrLf)
-        End If
-
-        'Build Properties
-        Dim sbPrivs As New StringBuilder
-        Dim sbProps As New StringBuilder
-        For Each row As DataGridViewRow In dgvDetails.Rows
-            If row.Cells(0).Value = True Then
-                Dim dbType As String = GetVBDataType(row.Cells("Type_Name").Value)
-                Dim strColumnName As String = row.Cells("Column_Name").Value
-                sbPrivs.AppendFormat("Private _{0} as {1}" & vbCrLf, strColumnName, dbType)
-                sbProps.AppendFormat("Public Property {0} () as {1}" & vbCrLf, strColumnName, dbType)
-                sbProps.Append("Get" & vbCrLf)
-                sbProps.Append("return _" & strColumnName & vbCrLf)
-                sbProps.Append("End Get" & vbCrLf)
-                sbProps.Append("Set(ByVal Value As " & dbType & ")" & vbCrLf)
-                sbProps.Append("_" & strColumnName & " = Value" & vbCrLf)
-                sbProps.Append("end set" & vbCrLf)
-                sbProps.Append("end Property ")
-                sbProps.Append(vbCrLf)
-                sbProps.Append(vbCrLf)
-            End If
-        Next
-
-        strBuilder.Append("#Region "" Properties """ & vbCrLf)
-        strBuilder.Append(sbPrivs.ToString)
-        strBuilder.Append(vbCrLf)
-        strBuilder.Append(sbProps.ToString)
-        strBuilder.Append(vbCrLf)
-        strBuilder.Append("# end Region " & vbCrLf) 'Properties region ends
-
-        strBuilder.Append(vbCrLf & "end class") ' Class building Ends
-        strFunctionText.Append(strBuilder.ToString)
-        Dim r As New frmResults
-        r.FormResults.Add(New frmResults.resultObject() With {.ResultText = strFunctionText.ToString, .ResultName = "Class Object"})
-        r.Show()
-        strBuilder = Nothing
-    End Sub
 
     Private Sub GenerateFunction()
         Dim strBuilder As New StringBuilder
@@ -591,7 +511,7 @@ Public Class frmGenerate
         'For example you may not be using MS Data Access Blocks, or ExecuteScalar etc...
         strBuilder.Append("'calling ExecuteDataset Method " & vbCrLf)
         strBuilder.Append("SqlHelper.ExecuteDataset(m_ConnectionString, CommandType.StoredProcedure," & Chr(34))
-        strBuilder.Append(lstDetails.SelectedValue.ToString() & Chr(34) & ",")
+        strBuilder.Append(lstDetails.SelectedItem.ToString() & Chr(34) & ",")
         strBuilder.Append("SQLParam)")
         strBuilder.Append(vbCrLf & vbCrLf)
         'Catch block
@@ -665,7 +585,6 @@ Public Class frmGenerate
         Dim jsFramework As String = cboJSFramework.SelectedItem.ToString
         Dim uiFramework As String = cboUIFramework.SelectedItem.ToString
 
-
         Dim tblclass As String = ""
         Dim divclass As String = ""
         Dim tdHdrClass As String = ""
@@ -711,7 +630,6 @@ Public Class frmGenerate
 
                 If selectedCols.Contains(colName) Then
                     colName = colName.Replace(" ", "").Replace("'", "_").Replace("-", "_").Replace("(", "_").Replace(")", "_")
-
 
                     Dim ctlID As String = ""
                     Select Case vbType.ToLower
@@ -801,7 +719,6 @@ Public Class frmGenerate
                                                 strBuilder.AppendFormat("<input type=""checkbox"" name=""input"" ng-checked=""{1}.{0}"" />" & Environment.NewLine, colName, strEntityName)
                                             End If
 
-
                                             strBuilder.Append("</div>" & Environment.NewLine)
                                         Case Else
                                             ctlID = String.Format("txt{0}", colName)
@@ -813,7 +730,6 @@ Public Class frmGenerate
                                             Else
                                                 strBuilder.AppendFormat("<input type=""text"" name=""input"" ng-model=""{1}.{0}"" />" & Environment.NewLine, colName, strEntityName)
                                             End If
-
 
                                             strBuilder.Append("</div>" & Environment.NewLine)
                                     End Select
@@ -849,9 +765,7 @@ Public Class frmGenerate
                     strBuilder.Append("</table>")
             End Select
 
-
         End If
-
 
         strCodeBehindBuilder.AppendLine("           exit for")
         strCodeBehindBuilder.AppendLine("       next")
@@ -877,358 +791,198 @@ Public Class frmGenerate
     End Sub
 
 
-    Private Function GenerateInsert() As String
-        Dim strBld As New StringBuilder
-        Dim IntJ As Integer
-        Dim intI As Integer
-        Dim blnNotPrimary As Boolean
-        Dim strColumnName As String
+    Private Sub GenerateSQL()
+        Dim strBuilder As New StringBuilder
+        Dim strClassName As String = String.Empty
+        Dim i As Integer = 0
 
-        'Start of comments
-        strBld.AppendFormat("--Created on {0}" & vbCrLf, Now.ToString)
-        strBld.Append("--Autogenerated by UseThisBOG " & vbCrLf & vbCrLf)
-        'End of comments
+        strClassName = InputBox("Enter Function Name", "Function Name")
 
-        strBld.AppendFormat("CREATE PROCEDURE [stp_{0}_InsertUpdate]" & vbCrLf, lstDetails.SelectedItem.ToString()) 'Stored procedure name
-        strBld.Append("(" & vbCrLf)
-        'Building Parameter list
-        For IntJ = 0 To intGridRowCount - 1
-            If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                If IntJ <> 0 Then
-                    strBld.Append("," & vbCrLf)
-                End If
+        Select Case cboClassLang.SelectedItem.ToString
+            Case "C#"
+                strBuilder.AppendFormat("public class {0}" & vbCrLf, strClassName)
+                'Build Properties
+                Dim sbPrivs As New StringBuilder
+                Dim sbProps As New StringBuilder
+                strBuilder.Append("{" & vbCrLf)
+                For Each row As DataGridViewRow In dgvDetails.Rows
+                    If row.Cells(0).Value = True Then
+                        Dim dbType As String = GetCSharpDataType(row.Cells("DATA_TYPE").Value)
+                        Dim strColumnName As String = row.Cells("Column_Name").Value
+                        sbPrivs.AppendFormat("private {1} _{0};" & vbCrLf, strColumnName, dbType)
+                        sbProps.AppendFormat("public {1} {0}" & vbCrLf, strColumnName, dbType)
+                        sbProps.Append("{" & vbCrLf)
+                        sbProps.Append("get {")
+                        sbProps.AppendFormat("return _{0};", strColumnName)
+                        sbProps.Append("}" & vbCrLf)
 
-                Dim colName As String = dgvDetails.Item("Column_Name", IntJ).Value
-                strBld.Append("@" & colName & " ")
-                strBld.Append(Space(35 - Len(colName)))
-                Select Case dgvDetails.Item("Type_Name", IntJ).Value.ToString
-                    Case "int", "ntext", "text", "datetime", "date", "smallint", "decimal", "money"
-                        'Data types that do not require length
-                        strBld.Append(dgvDetails.Item("Type_Name", IntJ).Value())
-                    Case Else
-                        'Others like varchar, char, nvarchar etc.
-                        strBld.Append(dgvDetails.Item("Type_Name", IntJ).Value() & "(")
-                        strBld.Append(dgvDetails.Item("Precision", IntJ).Value() & ")")
-                End Select
-            End If
-
-        Next
-        strBld.Append(vbCrLf & ")")
-        strBld.Append(vbCrLf & "AS" & vbCrLf)
-        strBld.Append("BEGIN" & vbCrLf & vbCrLf)
-        strBld.Append("DECLARE @newid int" & vbCrLf)
-
-        If dsColumns.Tables("Pkeys").Rows.Count > 0 Then
-            'Start writing if condition to avoid primary key violation errors
-            strBld.Append("IF EXISTS(select * from " & lstDetails.SelectedItem.ToString() & vbCrLf)
-            strBld.Append(Space(10) & "where ")
-            For IntJ = 0 To dsColumns.Tables("Pkeys").Rows.Count - 2
-                strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-                strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & " and ")
-            Next
-            'itemChecked = dsPkeys.Tables(0).Rows.Count - 1
-            strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-            strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & ")" & vbCrLf)
-
-            strBld.Append(Space(5) & "BEGIN" & vbCrLf)
-            strBld.Append(Space(7) & "--Update existing row" & vbCrLf)
-            strBld.Append(Space(7) & "UPDATE " & lstDetails.SelectedItem.ToString() & vbCrLf)
-            strBld.Append(Space(7) & "SET" & vbCrLf)
-
-            For IntJ = 0 To intGridRowCount - 1
-
-                'Check if selected column is primary key
-                If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                    blnNotPrimary = True
-                    strColumnName = dgvDetails.Item("Column_Name", IntJ).Value
-                    For intI = 0 To dsColumns.Tables("Pkeys").Rows.Count - 1
-                        If strColumnName = dsColumns.Tables("Pkeys").Rows(intI).Item("COLUMN_NAME") Then
-                            blnNotPrimary = False
-                        End If
-                    Next
-                    If blnNotPrimary Then
-                        strBld.Append(Space(10) & strColumnName & " = @" & strColumnName)
-                        strBld.Append("," & vbCrLf)
-                    End If
-                End If
-
-            Next
-
-            strBld.Remove(strBld.Length - 3, 2)
-
-            strBld.Append(Space(7) & "WHERE" & vbCrLf)
-            For IntJ = 0 To dsColumns.Tables("Pkeys").Rows.Count - 2
-                strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-                strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & " and " & vbCrLf)
-            Next
-            'itemChecked = dsPkeys.Tables(0).Rows.Count - 1
-            strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-            strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & vbCrLf)
-            strBld.Append(vbCrLf)
-            strBld.Append(Space(10) & "set @newid = @" & strColumnName & vbCrLf)
-
-
-            strBld.Append(Space(5) & "END" & vbCrLf)
-
-            strBld.Append("ELSE" & vbCrLf) ' Row Does not exists
-
-            strBld.Append(Space(5) & "BEGIN" & vbCrLf)
-            strBld.Append(Space(7) & "--Insert new row" & vbCrLf)
-            'insert into "tableName"(column_names) values(columns_values)
-            strBld.Append(Space(7) & "INSERT INTO " & lstDetails.SelectedItem.ToString() & "(" & vbCrLf)
-
-            For IntJ = 0 To intGridRowCount - 1
-
-                If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                    strColumnName = dgvDetails.Item("Column_Name", IntJ).Value() & ","
-                    strBld.Append(Space(10) & strColumnName & vbCrLf)
-                End If
-
-            Next
-
-            'Remove last ","
-            strBld.Remove(strBld.Length - 3, 2)
-
-            strBld.Append(")" & vbCrLf)
-
-            strBld.Append(Space(7) & "VALUES(" & vbCrLf)
-
-            For IntJ = 0 To intGridRowCount - 1
-
-                If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                    strColumnName = "@" & dgvDetails.Item("Column_Name", IntJ).Value() & ","
-                    strBld.Append(Space(10) & strColumnName & vbCrLf)
-                End If
-
-            Next
-            'Remove last ","
-            strBld.Remove(strBld.Length - 3, 2)
-
-            strBld.Append(")" & vbCrLf)
-
-            strBld.Append(Space(10) & "set @newid = SCOPE_IDENTITY()" & vbCrLf)
-
-            strBld.Append(Space(5) & "END" & vbCrLf)
-        Else
-            strBld.Append(Space(7) & "INSERT INTO " & lstDetails.SelectedItem.ToString() & "(" & vbCrLf)
-            For IntJ = 0 To intGridRowCount - 1
-
-                If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                    strColumnName = dgvDetails.Item("Column_Name", IntJ).Value() & ","
-                    strBld.Append(Space(10) & strColumnName & vbCrLf)
-                End If
-
-            Next
-
-            'Remove last ","
-            strBld.Remove(strBld.Length - 3, 2)
-
-            strBld.Append(")" & vbCrLf)
-
-            strBld.Append(Space(7) & "VALUES(" & vbCrLf)
-
-            For IntJ = 0 To intGridRowCount - 1
-
-                If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                    strColumnName = "@" & dgvDetails.Item("Column_Name", IntJ).Value() & ","
-                    strBld.Append(Space(10) & strColumnName & vbCrLf)
-                End If
-
-            Next
-            'Remove last ","
-            strBld.Remove(strBld.Length - 3, 2)
-
-            strBld.Append(")" & vbCrLf)
-
-            strBld.Append(Space(10) & "set @newid = SCOPE_IDENTITY()" & vbCrLf)
-
-
-        End If
-
-
-        strBld.Append(vbCrLf)
-        strBld.AppendFormat(Space(10) & "SELECT * FROM {0} where id = @newid", lstDetails.SelectedItem.ToString())
-        strBld.Append(vbCrLf)
-
-
-        strBld.Append("END")
-
-        Return strBld.ToString
-
-    End Function
-
-    Private Function GenerateSelect() As String
-        Dim strBld As New StringBuilder
-        Dim strDec As New List(Of String)
-        Dim strSet As New List(Of String)
-
-        'Start of comments
-        strBld.AppendFormat("--Created on {0}" & vbCrLf, Now.ToString)
-        strBld.Append("--Autogenerated by UseThisBOG " & vbCrLf & vbCrLf)
-        'End of comments
-
-        strBld.AppendFormat("CREATE PROCEDURE [stp_{0}_Select]" & vbCrLf, lstDetails.SelectedItem.ToString())
-        strBld.Append("as" & vbCrLf)
-        strBld.AppendLine("Begin")
-        strBld.AppendFormat("Select * From {0}" & vbCrLf, lstDetails.SelectedItem.ToString())
-        strBld.AppendLine("End")
-
-        Return strBld.ToString
-
-    End Function
-
-
-    Private Function GenerateUpdate() As String
-        Dim strBld As New StringBuilder
-        Dim IntJ As Integer
-        Dim intI As Integer
-        Dim blnNotPrimary As Boolean
-        Dim strColumnName As String
-
-        'Start of comments
-        strBld.AppendFormat("--Created on {0}" & vbCrLf, Now.ToString)
-        strBld.Append("--Autogenerated by UseThisBOG " & vbCrLf & vbCrLf)
-        'End of comments
-
-        strBld.AppendFormat("CREATE PROCEDURE [stp_{0}_Update]" & vbCrLf, lstDetails.SelectedItem.ToString())
-        strBld.Append("(" & vbCrLf)
-        'Variable definitions
-        For Each row As DataGridViewRow In dgvDetails.Rows
-            If row.Cells(0).Value = True Then
-                Dim dbType As String = GetVBDataType(row.Cells("Type_Name").Value)
-                Dim cname As String = row.Cells("Column_Name").Value
-
-                strBld.Append("@" & cname & " ")
-                strBld.Append(Space(35 - Len(cname)))
-                Select Case dgvDetails.Item("Type_Name", IntJ).Value.ToString
-                    Case "int", "ntext", "text", "datetime", "date", "smallint", "decimal"
-                        strBld.Append(cname & "," & vbCrLf)
-                    Case Else
-                        strBld.Append(dgvDetails.Item("Type_Name", IntJ).Value & "(")
-                        strBld.Append(dgvDetails.Item("Precision", IntJ).Value & ")," & vbCrLf)
-                End Select
-
-            End If
-        Next
-
-
-        'Remove last ","
-        strBld.Remove(strBld.Length - 3, 2)
-        strBld.Append(vbCrLf & ")")
-        strBld.Append(vbCrLf)
-        strBld.Append(vbCrLf)
-        strBld.Append("AS")
-        strBld.Append(vbCrLf)
-        strBld.Append("BEGIN")
-        strBld.Append(vbCrLf)
-
-        strBld.Append(Space(7) & "UPDATE " & lstDetails.SelectedItem.ToString & vbCrLf)
-        strBld.Append(Space(7) & "SET" & vbCrLf)
-
-        Dim lstParams As New List(Of String)
-        For IntJ = 0 To intGridRowCount - 1
-
-            'Check if selected column is primary key
-            If dgvDetails.Rows(IntJ).Cells(0).Value Then
-                blnNotPrimary = True
-                strColumnName = dgvDetails.Item("Column_Name", IntJ).Value
-                For intI = 0 To dsColumns.Tables("Pkeys").Rows.Count - 1
-                    If strColumnName = dsColumns.Tables("Pkeys").Rows(intI).Item("COLUMN_NAME") Then
-                        blnNotPrimary = False
+                        sbProps.Append("set {")
+                        sbProps.AppendFormat("_{0} = value;", strColumnName)
+                        sbProps.Append("} " & vbCrLf)
+                        sbProps.Append("}")
+                        sbProps.Append(vbCrLf)
+                        sbProps.Append(vbCrLf)
                     End If
                 Next
-                If blnNotPrimary Then
-                    'If IntJ > 0 Then strBld.Append("," & vbCrLf)
-                    'strBld.Append(Space(10) & strColumnName & " = @" & strColumnName)
-                    lstParams.Add(Space(10) & strColumnName & " = @" & strColumnName & vbCrLf)
-                End If
-            End If
 
-        Next
+                strBuilder.Append("#region Properties" & vbCrLf)
+                strBuilder.Append(sbPrivs.ToString)
+                strBuilder.Append(vbCrLf)
+                strBuilder.Append(sbProps.ToString)
+                strBuilder.Append(vbCrLf)
+                strBuilder.Append("#endregion" & vbCrLf) 'Properties region ends
 
-        'Remove last ","
-        'strBld.Remove(strBld.Length - 3, 2)
-        strBld.Append(Join(lstParams.ToArray, ","))
-        strBld.Append(vbCrLf)
-        'Adding where condition using Primary keys
-        'by default all the primary keys are used in where condition
-        If dsColumns.Tables("Pkeys").Rows.Count > 0 Then
 
-            strBld.Append(Space(7) & "WHERE" & vbCrLf)
+                strBuilder.Append("}")
 
-            For IntJ = 0 To dsColumns.Tables("Pkeys").Rows.Count - 2
-                strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-                strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & " and " & vbCrLf)
-            Next
-            strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
-            strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & vbCrLf)
-
-        End If
-        strBld.Append("END" & vbCrLf)
-
-        'Body ends
-        strBld.Append("Go")
-        strFunctionText.Append(strBld.ToString)
-        strBld = Nothing
-        Return strFunctionText.ToString
-    End Function
-
-    'Converts SQL data type to DbType for creating stored procedure
-    Private Function GetSQLDataType(ByVal typeName As String) As String
-        'Add more data types if required
-        Dim dbType As String = String.Empty
-        Select Case typeName
-            Case "int"
-                dbType = "DbType.Int32"
-            Case "varchar", "nvarchar", "text", "char", "ntext"
-                dbType = "DbType.String"
-            Case "smallint"
-                dbType = "DbType.Int16"
-            Case "money", "decimal"
-                dbType = "DbType.Single"
-            Case "datetime"
-                dbType = "DbType.Date"
-            Case "float"
-                dbType = "DbType.Double"
             Case Else
-                'Add other missing data types
+                strBuilder.AppendFormat("Public Class {0}", strClassName)
+                'Build Properties
+                Dim sbPrivs As New StringBuilder
+                Dim sbProps As New StringBuilder
+                For Each row As DataGridViewRow In dgvDetails.Rows
+                    If row.Cells(0).Value = True Then
+                        Dim dbType As String = GetVBDataType(row.Cells("DATA_TYPE").Value)
+                        Dim strColumnName As String = row.Cells("Column_Name").Value
+                        sbPrivs.AppendFormat("Private _{0} as {1}" & vbCrLf, strColumnName, dbType)
+                        sbProps.AppendFormat("Public Property {0} () as {1}" & vbCrLf, strColumnName, dbType)
+                        sbProps.Append("Get" & vbCrLf)
+                        sbProps.Append("return _" & strColumnName & vbCrLf)
+                        sbProps.Append("End Get" & vbCrLf)
+                        sbProps.Append("Set(ByVal Value As " & dbType & ")" & vbCrLf)
+                        sbProps.Append("_" & strColumnName & " = Value" & vbCrLf)
+                        sbProps.Append("end set" & vbCrLf)
+                        sbProps.Append("end Property ")
+                        sbProps.Append(vbCrLf)
+                        sbProps.Append(vbCrLf)
+                    End If
+                Next
+
+                strBuilder.Append("#Region "" Properties """ & vbCrLf)
+                strBuilder.Append(sbPrivs.ToString)
+                strBuilder.Append(vbCrLf)
+                strBuilder.Append(sbProps.ToString)
+                strBuilder.Append(vbCrLf)
+                strBuilder.Append("# end Region " & vbCrLf) 'Properties region ends
+
+                strBuilder.Append(vbCrLf & "end class") ' Class building Ends
         End Select
 
-        Return dbType
-    End Function
 
-    'Performs data type conversions from SQL server type to VB type.
-    Private Function GetVBDataType(ByVal typeName As String) As String
-        Select Case typeName
-            Case "numeric", "int"
-                Return "Integer"
-            Case "nvarchar", "varchar", "ntext", "text"
-                Return "string"
-            Case "money", "decimal"
-                Return "single"
-            Case "smallint"
-                Return "Int16"
-            Case "datetime"
-                Return "Date"
-            Case "byte"
-                Return "byte"
-            Case "bit"
-                Return "boolean"
-            Case "char"
-                Return "Char"
-            Case "float"
-                Return "Double"
-            Case Else
-                'Add other missing data types
-                Return "string"
-        End Select
-    End Function
+
+        strFunctionText.Append(strBuilder.ToString)
+        Dim r As New frmResults
+        r.FormResults.Add(New frmResults.resultObject() With {.ResultText = strFunctionText.ToString, .ResultName = "Class Object"})
+        r.Show()
+        strBuilder = Nothing
+
+
+    End Sub
+
+    'Private Function GenerateUpdate() As String
+    '    Dim strBld As New StringBuilder
+    '    Dim IntJ As Integer
+    '    Dim intI As Integer
+    '    Dim blnNotPrimary As Boolean
+    '    Dim strColumnName As String
+
+    '    'Start of comments
+    '    strBld.AppendFormat("--Created on {0}" & vbCrLf, Now.ToString)
+    '    strBld.Append("--Autogenerated by UseThisBOG " & vbCrLf & vbCrLf)
+    '    'End of comments
+
+    '    strBld.AppendFormat("CREATE PROCEDURE [stp_{0}_Update]" & vbCrLf, lstDetails.SelectedItem.ToString())
+    '    strBld.Append("(" & vbCrLf)
+    '    'Variable definitions
+    '    For Each row As DataGridViewRow In dgvDetails.Rows
+    '        If row.Cells(0).Value = True Then
+    '            Dim dbType As String = GetVBDataType(row.Cells("Type_Name").Value)
+    '            Dim cname As String = row.Cells("Column_Name").Value
+
+    '            strBld.Append("@" & cname & " ")
+    '            strBld.Append(Space(35 - Len(cname)))
+    '            Select Case dgvDetails.Item("Type_Name", IntJ).Value.ToString
+    '                Case "int", "ntext", "text", "datetime", "date", "smallint", "decimal"
+    '                    strBld.Append(cname & "," & vbCrLf)
+    '                Case Else
+    '                    strBld.Append(dgvDetails.Item("Type_Name", IntJ).Value & "(")
+    '                    strBld.Append(dgvDetails.Item("Precision", IntJ).Value & ")," & vbCrLf)
+    '            End Select
+
+    '        End If
+    '    Next
+
+    '    'Remove last ","
+    '    strBld.Remove(strBld.Length - 3, 2)
+    '    strBld.Append(vbCrLf & ")")
+    '    strBld.Append(vbCrLf)
+    '    strBld.Append(vbCrLf)
+    '    strBld.Append("AS")
+    '    strBld.Append(vbCrLf)
+    '    strBld.Append("BEGIN")
+    '    strBld.Append(vbCrLf)
+
+    '    strBld.Append(Space(7) & "UPDATE " & lstDetails.SelectedItem.ToString & vbCrLf)
+    '    strBld.Append(Space(7) & "SET" & vbCrLf)
+
+    '    Dim lstParams As New List(Of String)
+    '    For IntJ = 0 To intGridRowCount - 1
+
+    '        'Check if selected column is primary key
+    '        If dgvDetails.Rows(IntJ).Cells(0).Value Then
+    '            blnNotPrimary = True
+    '            strColumnName = dgvDetails.Item("Column_Name", IntJ).Value
+    '            For intI = 0 To dsColumns.Tables("Pkeys").Rows.Count - 1
+    '                If strColumnName = dsColumns.Tables("Pkeys").Rows(intI).Item("COLUMN_NAME") Then
+    '                    blnNotPrimary = False
+    '                End If
+    '            Next
+    '            If blnNotPrimary Then
+    '                'If IntJ > 0 Then strBld.Append("," & vbCrLf)
+    '                'strBld.Append(Space(10) & strColumnName & " = @" & strColumnName)
+    '                lstParams.Add(Space(10) & strColumnName & " = @" & strColumnName & vbCrLf)
+    '            End If
+    '        End If
+
+    '    Next
+
+    '    'Remove last ","
+    '    'strBld.Remove(strBld.Length - 3, 2)
+    '    strBld.Append(Join(lstParams.ToArray, ","))
+    '    strBld.Append(vbCrLf)
+    '    'Adding where condition using Primary keys
+    '    'by default all the primary keys are used in where condition
+    '    If dsColumns.Tables("Pkeys").Rows.Count > 0 Then
+
+    '        strBld.Append(Space(7) & "WHERE" & vbCrLf)
+
+    '        For IntJ = 0 To dsColumns.Tables("Pkeys").Rows.Count - 2
+    '            strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
+    '            strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & " and " & vbCrLf)
+    '        Next
+    '        strColumnName = dsColumns.Tables("Pkeys").Rows(IntJ).Item("COLUMN_NAME")
+    '        strBld.Append(Space(10) & strColumnName & " = " & "@" & strColumnName & vbCrLf)
+
+    '    End If
+    '    strBld.Append("END" & vbCrLf)
+
+    '    'Body ends
+    '    strBld.Append("Go")
+    '    strFunctionText.Append(strBld.ToString)
+    '    strBld = Nothing
+    '    Return strFunctionText.ToString
+    'End Function
+
+
 
     <System.Diagnostics.DebuggerStepThrough>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmGenerate))
         Me.scMain = New System.Windows.Forms.SplitContainer()
         Me.GroupBox2 = New System.Windows.Forms.GroupBox()
+        Me.gbSQL = New System.Windows.Forms.GroupBox()
+        Me.txtSQL = New System.Windows.Forms.TextBox()
+        Me.btnLoadSQL = New System.Windows.Forms.Button()
         Me.lstDetails = New System.Windows.Forms.ListBox()
         Me.cboTypes = New System.Windows.Forms.ComboBox()
         Me.lblUser = New System.Windows.Forms.Label()
@@ -1237,54 +991,57 @@ Public Class frmGenerate
         Me.scMain2 = New System.Windows.Forms.SplitContainer()
         Me.dgvDetails = New System.Windows.Forms.DataGridView()
         Me.chkColumn = New System.Windows.Forms.DataGridViewCheckBoxColumn()
-        Me.TabControl1 = New System.Windows.Forms.TabControl()
-        Me.TabPage1 = New System.Windows.Forms.TabPage()
+        Me.tcMain = New System.Windows.Forms.TabControl()
+        Me.tpSQL = New System.Windows.Forms.TabPage()
         Me.GroupBox5 = New System.Windows.Forms.GroupBox()
         Me.chkDelete = New System.Windows.Forms.CheckBox()
         Me.btnGenFunction = New System.Windows.Forms.Button()
         Me.chkSelect = New System.Windows.Forms.CheckBox()
         Me.chkInsert = New System.Windows.Forms.CheckBox()
         Me.Label1 = New System.Windows.Forms.Label()
-        Me.TabPage2 = New System.Windows.Forms.TabPage()
+        Me.tpHTML = New System.Windows.Forms.TabPage()
         Me.GroupBox4 = New System.Windows.Forms.GroupBox()
+        Me.chkEditable = New System.Windows.Forms.CheckBox()
         Me.btnHTML = New System.Windows.Forms.Button()
         Me.chkJson = New System.Windows.Forms.CheckBox()
         Me.chkButtons = New System.Windows.Forms.CheckBox()
         Me.chkUseTable = New System.Windows.Forms.CheckBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
         Me.cboUIFramework = New System.Windows.Forms.ComboBox()
+        Me.GroupBox7 = New System.Windows.Forms.GroupBox()
+        Me.cboJSFramework = New System.Windows.Forms.ComboBox()
         Me.GroupBox3 = New System.Windows.Forms.GroupBox()
         Me.cboPageType = New System.Windows.Forms.ComboBox()
         Me.Label3 = New System.Windows.Forms.Label()
-        Me.TabPage3 = New System.Windows.Forms.TabPage()
+        Me.tpClass = New System.Windows.Forms.TabPage()
         Me.GroupBox6 = New System.Windows.Forms.GroupBox()
-        Me.chkClassMethods = New System.Windows.Forms.CheckBox()
-        Me.cboClassLang = New System.Windows.Forms.ComboBox()
+        Me.chkUseAutoProp = New System.Windows.Forms.CheckBox()
         Me.btnEntity = New System.Windows.Forms.Button()
+        Me.cboClassLang = New System.Windows.Forms.ComboBox()
         Me.Label4 = New System.Windows.Forms.Label()
-        Me.chkEditable = New System.Windows.Forms.CheckBox()
-        Me.GroupBox7 = New System.Windows.Forms.GroupBox()
-        Me.cboJSFramework = New System.Windows.Forms.ComboBox()
+        Me.grpItems = New System.Windows.Forms.GroupBox()
         CType(Me.scMain, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.scMain.Panel1.SuspendLayout()
         Me.scMain.Panel2.SuspendLayout()
         Me.scMain.SuspendLayout()
         Me.GroupBox2.SuspendLayout()
+        Me.gbSQL.SuspendLayout()
         CType(Me.scMain2, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.scMain2.Panel1.SuspendLayout()
         Me.scMain2.Panel2.SuspendLayout()
         Me.scMain2.SuspendLayout()
         CType(Me.dgvDetails, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.TabControl1.SuspendLayout()
-        Me.TabPage1.SuspendLayout()
+        Me.tcMain.SuspendLayout()
+        Me.tpSQL.SuspendLayout()
         Me.GroupBox5.SuspendLayout()
-        Me.TabPage2.SuspendLayout()
+        Me.tpHTML.SuspendLayout()
         Me.GroupBox4.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
-        Me.GroupBox3.SuspendLayout()
-        Me.TabPage3.SuspendLayout()
-        Me.GroupBox6.SuspendLayout()
         Me.GroupBox7.SuspendLayout()
+        Me.GroupBox3.SuspendLayout()
+        Me.tpClass.SuspendLayout()
+        Me.GroupBox6.SuspendLayout()
+        Me.grpItems.SuspendLayout()
         Me.SuspendLayout()
         '
         'scMain
@@ -1307,7 +1064,8 @@ Public Class frmGenerate
         '
         'GroupBox2
         '
-        Me.GroupBox2.Controls.Add(Me.lstDetails)
+        Me.GroupBox2.Controls.Add(Me.grpItems)
+        Me.GroupBox2.Controls.Add(Me.gbSQL)
         Me.GroupBox2.Controls.Add(Me.cboTypes)
         Me.GroupBox2.Controls.Add(Me.lblUser)
         Me.GroupBox2.Controls.Add(Me.cmbDatabase)
@@ -1321,20 +1079,50 @@ Public Class frmGenerate
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "Server Info"
         '
+        'gbSQL
+        '
+        Me.gbSQL.Controls.Add(Me.txtSQL)
+        Me.gbSQL.Controls.Add(Me.btnLoadSQL)
+        Me.gbSQL.Location = New System.Drawing.Point(8, 118)
+        Me.gbSQL.Name = "gbSQL"
+        Me.gbSQL.Size = New System.Drawing.Size(200, 133)
+        Me.gbSQL.TabIndex = 18
+        Me.gbSQL.TabStop = False
+        Me.gbSQL.Text = "SQL Statement"
+        '
+        'txtSQL
+        '
+        Me.txtSQL.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.txtSQL.Location = New System.Drawing.Point(3, 16)
+        Me.txtSQL.Multiline = True
+        Me.txtSQL.Name = "txtSQL"
+        Me.txtSQL.Size = New System.Drawing.Size(194, 91)
+        Me.txtSQL.TabIndex = 17
+        '
+        'btnLoadSQL
+        '
+        Me.btnLoadSQL.Dock = System.Windows.Forms.DockStyle.Bottom
+        Me.btnLoadSQL.Location = New System.Drawing.Point(3, 107)
+        Me.btnLoadSQL.Name = "btnLoadSQL"
+        Me.btnLoadSQL.Size = New System.Drawing.Size(194, 23)
+        Me.btnLoadSQL.TabIndex = 18
+        Me.btnLoadSQL.Text = "Load SQL"
+        Me.btnLoadSQL.UseVisualStyleBackColor = True
+        '
         'lstDetails
         '
         Me.lstDetails.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstDetails.FormattingEnabled = True
-        Me.lstDetails.Location = New System.Drawing.Point(5, 90)
+        Me.lstDetails.Location = New System.Drawing.Point(3, 16)
         Me.lstDetails.Name = "lstDetails"
-        Me.lstDetails.Size = New System.Drawing.Size(203, 622)
+        Me.lstDetails.Size = New System.Drawing.Size(194, 298)
         Me.lstDetails.TabIndex = 15
         '
         'cboTypes
         '
         Me.cboTypes.Dock = System.Windows.Forms.DockStyle.Top
         Me.cboTypes.FormattingEnabled = True
-        Me.cboTypes.Items.AddRange(New Object() {"Tables", "Procedures", "Views"})
+        Me.cboTypes.Items.AddRange(New Object() {"Tables", "Views", "SQL"})
         Me.cboTypes.Location = New System.Drawing.Point(5, 69)
         Me.cboTypes.Name = "cboTypes"
         Me.cboTypes.Size = New System.Drawing.Size(203, 21)
@@ -1381,7 +1169,7 @@ Public Class frmGenerate
         'scMain2.Panel2
         '
         Me.scMain2.Panel2.BackColor = System.Drawing.Color.SlateGray
-        Me.scMain2.Panel2.Controls.Add(Me.TabControl1)
+        Me.scMain2.Panel2.Controls.Add(Me.tcMain)
         Me.scMain2.Panel2.Padding = New System.Windows.Forms.Padding(5)
         Me.scMain2.Size = New System.Drawing.Size(1033, 715)
         Me.scMain2.SplitterDistance = 706
@@ -1406,29 +1194,29 @@ Public Class frmGenerate
         Me.chkColumn.Name = "chkColumn"
         Me.chkColumn.Width = 20
         '
-        'TabControl1
+        'tcMain
         '
-        Me.TabControl1.Controls.Add(Me.TabPage1)
-        Me.TabControl1.Controls.Add(Me.TabPage2)
-        Me.TabControl1.Controls.Add(Me.TabPage3)
-        Me.TabControl1.Dock = System.Windows.Forms.DockStyle.Top
-        Me.TabControl1.Location = New System.Drawing.Point(5, 5)
-        Me.TabControl1.Name = "TabControl1"
-        Me.TabControl1.SelectedIndex = 0
-        Me.TabControl1.Size = New System.Drawing.Size(313, 401)
-        Me.TabControl1.TabIndex = 25
+        Me.tcMain.Controls.Add(Me.tpSQL)
+        Me.tcMain.Controls.Add(Me.tpHTML)
+        Me.tcMain.Controls.Add(Me.tpClass)
+        Me.tcMain.Dock = System.Windows.Forms.DockStyle.Top
+        Me.tcMain.Location = New System.Drawing.Point(5, 5)
+        Me.tcMain.Name = "tcMain"
+        Me.tcMain.SelectedIndex = 0
+        Me.tcMain.Size = New System.Drawing.Size(313, 401)
+        Me.tcMain.TabIndex = 25
         '
-        'TabPage1
+        'tpSQL
         '
-        Me.TabPage1.Controls.Add(Me.GroupBox5)
-        Me.TabPage1.Controls.Add(Me.Label1)
-        Me.TabPage1.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage1.Name = "TabPage1"
-        Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage1.Size = New System.Drawing.Size(305, 261)
-        Me.TabPage1.TabIndex = 0
-        Me.TabPage1.Text = "SQL"
-        Me.TabPage1.UseVisualStyleBackColor = True
+        Me.tpSQL.Controls.Add(Me.GroupBox5)
+        Me.tpSQL.Controls.Add(Me.Label1)
+        Me.tpSQL.Location = New System.Drawing.Point(4, 22)
+        Me.tpSQL.Name = "tpSQL"
+        Me.tpSQL.Padding = New System.Windows.Forms.Padding(3)
+        Me.tpSQL.Size = New System.Drawing.Size(305, 375)
+        Me.tpSQL.TabIndex = 0
+        Me.tpSQL.Text = "SQL"
+        Me.tpSQL.UseVisualStyleBackColor = True
         '
         'GroupBox5
         '
@@ -1440,7 +1228,7 @@ Public Class frmGenerate
         Me.GroupBox5.Dock = System.Windows.Forms.DockStyle.Fill
         Me.GroupBox5.Location = New System.Drawing.Point(3, 3)
         Me.GroupBox5.Name = "GroupBox5"
-        Me.GroupBox5.Size = New System.Drawing.Size(299, 204)
+        Me.GroupBox5.Size = New System.Drawing.Size(299, 318)
         Me.GroupBox5.TabIndex = 23
         Me.GroupBox5.TabStop = False
         Me.GroupBox5.Text = "SQL"
@@ -1462,7 +1250,7 @@ Public Class frmGenerate
         '
         Me.btnGenFunction.BackColor = System.Drawing.Color.LightSalmon
         Me.btnGenFunction.Dock = System.Windows.Forms.DockStyle.Bottom
-        Me.btnGenFunction.Location = New System.Drawing.Point(3, 177)
+        Me.btnGenFunction.Location = New System.Drawing.Point(3, 291)
         Me.btnGenFunction.Name = "btnGenFunction"
         Me.btnGenFunction.Size = New System.Drawing.Size(293, 24)
         Me.btnGenFunction.TabIndex = 10
@@ -1490,7 +1278,7 @@ Public Class frmGenerate
         Me.chkInsert.Padding = New System.Windows.Forms.Padding(5, 0, 5, 0)
         Me.chkInsert.Size = New System.Drawing.Size(293, 17)
         Me.chkInsert.TabIndex = 19
-        Me.chkInsert.Text = "Insert"
+        Me.chkInsert.Text = "Insert/Update"
         Me.chkInsert.UseVisualStyleBackColor = True
         '
         'Label1
@@ -1498,24 +1286,24 @@ Public Class frmGenerate
         Me.Label1.Dock = System.Windows.Forms.DockStyle.Bottom
         Me.Label1.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Label1.ForeColor = System.Drawing.Color.Black
-        Me.Label1.Location = New System.Drawing.Point(3, 207)
+        Me.Label1.Location = New System.Drawing.Point(3, 321)
         Me.Label1.Name = "Label1"
         Me.Label1.Padding = New System.Windows.Forms.Padding(2)
         Me.Label1.Size = New System.Drawing.Size(299, 51)
         Me.Label1.TabIndex = 22
         Me.Label1.Text = "Use these checkboxes to determine what sql script to generate."
         '
-        'TabPage2
+        'tpHTML
         '
-        Me.TabPage2.Controls.Add(Me.GroupBox4)
-        Me.TabPage2.Controls.Add(Me.Label3)
-        Me.TabPage2.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage2.Name = "TabPage2"
-        Me.TabPage2.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage2.Size = New System.Drawing.Size(305, 375)
-        Me.TabPage2.TabIndex = 1
-        Me.TabPage2.Text = "HTML"
-        Me.TabPage2.UseVisualStyleBackColor = True
+        Me.tpHTML.Controls.Add(Me.GroupBox4)
+        Me.tpHTML.Controls.Add(Me.Label3)
+        Me.tpHTML.Location = New System.Drawing.Point(4, 22)
+        Me.tpHTML.Name = "tpHTML"
+        Me.tpHTML.Padding = New System.Windows.Forms.Padding(3)
+        Me.tpHTML.Size = New System.Drawing.Size(305, 375)
+        Me.tpHTML.TabIndex = 1
+        Me.tpHTML.Text = "HTML"
+        Me.tpHTML.UseVisualStyleBackColor = True
         '
         'GroupBox4
         '
@@ -1536,6 +1324,17 @@ Public Class frmGenerate
         Me.GroupBox4.TabIndex = 18
         Me.GroupBox4.TabStop = False
         Me.GroupBox4.Text = "HTML Options"
+        '
+        'chkEditable
+        '
+        Me.chkEditable.AutoSize = True
+        Me.chkEditable.Dock = System.Windows.Forms.DockStyle.Top
+        Me.chkEditable.Location = New System.Drawing.Point(5, 195)
+        Me.chkEditable.Name = "chkEditable"
+        Me.chkEditable.Size = New System.Drawing.Size(289, 17)
+        Me.chkEditable.TabIndex = 21
+        Me.chkEditable.Text = "Is Editable"
+        Me.chkEditable.UseVisualStyleBackColor = True
         '
         'btnHTML
         '
@@ -1602,6 +1401,27 @@ Public Class frmGenerate
         Me.cboUIFramework.Size = New System.Drawing.Size(283, 21)
         Me.cboUIFramework.TabIndex = 16
         '
+        'GroupBox7
+        '
+        Me.GroupBox7.Controls.Add(Me.cboJSFramework)
+        Me.GroupBox7.Dock = System.Windows.Forms.DockStyle.Top
+        Me.GroupBox7.Location = New System.Drawing.Point(5, 64)
+        Me.GroupBox7.Name = "GroupBox7"
+        Me.GroupBox7.Size = New System.Drawing.Size(289, 40)
+        Me.GroupBox7.TabIndex = 22
+        Me.GroupBox7.TabStop = False
+        Me.GroupBox7.Text = "JS Framework"
+        '
+        'cboJSFramework
+        '
+        Me.cboJSFramework.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.cboJSFramework.FormattingEnabled = True
+        Me.cboJSFramework.Items.AddRange(New Object() {"None", "AngularJS"})
+        Me.cboJSFramework.Location = New System.Drawing.Point(3, 16)
+        Me.cboJSFramework.Name = "cboJSFramework"
+        Me.cboJSFramework.Size = New System.Drawing.Size(283, 21)
+        Me.cboJSFramework.TabIndex = 16
+        '
         'GroupBox3
         '
         Me.GroupBox3.Controls.Add(Me.cboPageType)
@@ -1635,110 +1455,87 @@ Public Class frmGenerate
         Me.Label3.TabIndex = 23
         Me.Label3.Text = "Use these checkboxes to add CRUD Buttons,Create JSON Onject, or Jquery UI css."
         '
-        'TabPage3
+        'tpClass
         '
-        Me.TabPage3.Controls.Add(Me.GroupBox6)
-        Me.TabPage3.Controls.Add(Me.Label4)
-        Me.TabPage3.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage3.Name = "TabPage3"
-        Me.TabPage3.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage3.Size = New System.Drawing.Size(305, 261)
-        Me.TabPage3.TabIndex = 2
-        Me.TabPage3.Text = "Class"
-        Me.TabPage3.UseVisualStyleBackColor = True
+        Me.tpClass.Controls.Add(Me.GroupBox6)
+        Me.tpClass.Controls.Add(Me.Label4)
+        Me.tpClass.Location = New System.Drawing.Point(4, 22)
+        Me.tpClass.Name = "tpClass"
+        Me.tpClass.Padding = New System.Windows.Forms.Padding(3)
+        Me.tpClass.Size = New System.Drawing.Size(305, 375)
+        Me.tpClass.TabIndex = 2
+        Me.tpClass.Text = "Class"
+        Me.tpClass.UseVisualStyleBackColor = True
         '
         'GroupBox6
         '
         Me.GroupBox6.AutoSize = True
-        Me.GroupBox6.Controls.Add(Me.chkClassMethods)
-        Me.GroupBox6.Controls.Add(Me.cboClassLang)
+        Me.GroupBox6.Controls.Add(Me.chkUseAutoProp)
         Me.GroupBox6.Controls.Add(Me.btnEntity)
+        Me.GroupBox6.Controls.Add(Me.cboClassLang)
         Me.GroupBox6.Dock = System.Windows.Forms.DockStyle.Fill
         Me.GroupBox6.Location = New System.Drawing.Point(3, 3)
         Me.GroupBox6.Name = "GroupBox6"
         Me.GroupBox6.Padding = New System.Windows.Forms.Padding(5, 3, 5, 3)
-        Me.GroupBox6.Size = New System.Drawing.Size(299, 206)
+        Me.GroupBox6.Size = New System.Drawing.Size(299, 320)
         Me.GroupBox6.TabIndex = 24
         Me.GroupBox6.TabStop = False
-        Me.GroupBox6.Text = "Class Options"
+        Me.GroupBox6.Text = "Class Language"
         '
-        'chkClassMethods
+        'chkUseAutoProp
         '
-        Me.chkClassMethods.AutoSize = True
-        Me.chkClassMethods.Checked = True
-        Me.chkClassMethods.CheckState = System.Windows.Forms.CheckState.Checked
-        Me.chkClassMethods.Dock = System.Windows.Forms.DockStyle.Top
-        Me.chkClassMethods.Location = New System.Drawing.Point(5, 37)
-        Me.chkClassMethods.Name = "chkClassMethods"
-        Me.chkClassMethods.Size = New System.Drawing.Size(289, 17)
-        Me.chkClassMethods.TabIndex = 13
-        Me.chkClassMethods.Text = "Add CRUD Methods"
-        Me.chkClassMethods.UseVisualStyleBackColor = True
-        '
-        'cboClassLang
-        '
-        Me.cboClassLang.Dock = System.Windows.Forms.DockStyle.Top
-        Me.cboClassLang.FormattingEnabled = True
-        Me.cboClassLang.Items.AddRange(New Object() {"VB", "C# Coming Soon!!!"})
-        Me.cboClassLang.Location = New System.Drawing.Point(5, 16)
-        Me.cboClassLang.Name = "cboClassLang"
-        Me.cboClassLang.Size = New System.Drawing.Size(289, 21)
-        Me.cboClassLang.TabIndex = 12
+        Me.chkUseAutoProp.AutoSize = True
+        Me.chkUseAutoProp.Dock = System.Windows.Forms.DockStyle.Top
+        Me.chkUseAutoProp.Location = New System.Drawing.Point(5, 37)
+        Me.chkUseAutoProp.Name = "chkUseAutoProp"
+        Me.chkUseAutoProp.Size = New System.Drawing.Size(289, 17)
+        Me.chkUseAutoProp.TabIndex = 13
+        Me.chkUseAutoProp.Text = "Use Auto Property"
+        Me.chkUseAutoProp.UseVisualStyleBackColor = True
         '
         'btnEntity
         '
         Me.btnEntity.BackColor = System.Drawing.Color.LightGoldenrodYellow
         Me.btnEntity.Dock = System.Windows.Forms.DockStyle.Bottom
-        Me.btnEntity.Location = New System.Drawing.Point(5, 175)
+        Me.btnEntity.Location = New System.Drawing.Point(5, 289)
         Me.btnEntity.Name = "btnEntity"
         Me.btnEntity.Size = New System.Drawing.Size(289, 28)
         Me.btnEntity.TabIndex = 11
         Me.btnEntity.Text = "Generate Class"
         Me.btnEntity.UseVisualStyleBackColor = False
         '
+        'cboClassLang
+        '
+        Me.cboClassLang.Dock = System.Windows.Forms.DockStyle.Top
+        Me.cboClassLang.FormattingEnabled = True
+        Me.cboClassLang.Items.AddRange(New Object() {"VB", "C#"})
+        Me.cboClassLang.Location = New System.Drawing.Point(5, 16)
+        Me.cboClassLang.Name = "cboClassLang"
+        Me.cboClassLang.Size = New System.Drawing.Size(289, 21)
+        Me.cboClassLang.TabIndex = 12
+        '
         'Label4
         '
         Me.Label4.Dock = System.Windows.Forms.DockStyle.Bottom
         Me.Label4.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Label4.ForeColor = System.Drawing.Color.Black
-        Me.Label4.Location = New System.Drawing.Point(3, 209)
+        Me.Label4.Location = New System.Drawing.Point(3, 323)
         Me.Label4.Name = "Label4"
         Me.Label4.Padding = New System.Windows.Forms.Padding(2)
         Me.Label4.Size = New System.Drawing.Size(299, 49)
         Me.Label4.TabIndex = 23
         Me.Label4.Text = "Generate a class object to use with sql or html."
         '
-        'chkEditable
+        'grpItems
         '
-        Me.chkEditable.AutoSize = True
-        Me.chkEditable.Dock = System.Windows.Forms.DockStyle.Top
-        Me.chkEditable.Location = New System.Drawing.Point(5, 195)
-        Me.chkEditable.Name = "chkEditable"
-        Me.chkEditable.Size = New System.Drawing.Size(289, 17)
-        Me.chkEditable.TabIndex = 21
-        Me.chkEditable.Text = "Is Editable"
-        Me.chkEditable.UseVisualStyleBackColor = True
-        '
-        'GroupBox7
-        '
-        Me.GroupBox7.Controls.Add(Me.cboJSFramework)
-        Me.GroupBox7.Dock = System.Windows.Forms.DockStyle.Top
-        Me.GroupBox7.Location = New System.Drawing.Point(5, 64)
-        Me.GroupBox7.Name = "GroupBox7"
-        Me.GroupBox7.Size = New System.Drawing.Size(289, 40)
-        Me.GroupBox7.TabIndex = 22
-        Me.GroupBox7.TabStop = False
-        Me.GroupBox7.Text = "JS Framework"
-        '
-        'cboJSFramework
-        '
-        Me.cboJSFramework.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.cboJSFramework.FormattingEnabled = True
-        Me.cboJSFramework.Items.AddRange(New Object() {"None", "AngularJS"})
-        Me.cboJSFramework.Location = New System.Drawing.Point(3, 16)
-        Me.cboJSFramework.Name = "cboJSFramework"
-        Me.cboJSFramework.Size = New System.Drawing.Size(283, 21)
-        Me.cboJSFramework.TabIndex = 16
+        Me.grpItems.Controls.Add(Me.lstDetails)
+        Me.grpItems.Location = New System.Drawing.Point(10, 257)
+        Me.grpItems.Name = "grpItems"
+        Me.grpItems.Size = New System.Drawing.Size(200, 317)
+        Me.grpItems.TabIndex = 19
+        Me.grpItems.TabStop = False
+        Me.grpItems.Text = "Objects"
+        Me.grpItems.Visible = False
         '
         'frmGenerate
         '
@@ -1754,27 +1551,30 @@ Public Class frmGenerate
         CType(Me.scMain, System.ComponentModel.ISupportInitialize).EndInit()
         Me.scMain.ResumeLayout(False)
         Me.GroupBox2.ResumeLayout(False)
+        Me.gbSQL.ResumeLayout(False)
+        Me.gbSQL.PerformLayout()
         Me.scMain2.Panel1.ResumeLayout(False)
         Me.scMain2.Panel2.ResumeLayout(False)
         CType(Me.scMain2, System.ComponentModel.ISupportInitialize).EndInit()
         Me.scMain2.ResumeLayout(False)
         CType(Me.dgvDetails, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.TabControl1.ResumeLayout(False)
-        Me.TabPage1.ResumeLayout(False)
-        Me.TabPage1.PerformLayout()
+        Me.tcMain.ResumeLayout(False)
+        Me.tpSQL.ResumeLayout(False)
+        Me.tpSQL.PerformLayout()
         Me.GroupBox5.ResumeLayout(False)
         Me.GroupBox5.PerformLayout()
-        Me.TabPage2.ResumeLayout(False)
-        Me.TabPage2.PerformLayout()
+        Me.tpHTML.ResumeLayout(False)
+        Me.tpHTML.PerformLayout()
         Me.GroupBox4.ResumeLayout(False)
         Me.GroupBox4.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)
+        Me.GroupBox7.ResumeLayout(False)
         Me.GroupBox3.ResumeLayout(False)
-        Me.TabPage3.ResumeLayout(False)
-        Me.TabPage3.PerformLayout()
+        Me.tpClass.ResumeLayout(False)
+        Me.tpClass.PerformLayout()
         Me.GroupBox6.ResumeLayout(False)
         Me.GroupBox6.PerformLayout()
-        Me.GroupBox7.ResumeLayout(False)
+        Me.grpItems.ResumeLayout(False)
         Me.ResumeLayout(False)
 
     End Sub
@@ -1794,6 +1594,13 @@ Public Class frmGenerate
                     Next
                 End If
 
+                grpItems.Visible = True
+                grpItems.Dock = DockStyle.Fill
+
+
+                gbSQL.Dock = DockStyle.None
+                gbSQL.Visible = False
+
             Case "procedures"
                 If Not IsNothing(dsDetails.Tables("StoredProcs")) Then
                     chkInsert.Enabled = False
@@ -1806,7 +1613,25 @@ Public Class frmGenerate
                             lstDetails.Items.Add(dr("PROCEDURE_NAME").ToString)
                         End If
                     Next
+
                 End If
+
+                grpItems.Visible = True
+                grpItems.Dock = DockStyle.Fill
+
+
+                gbSQL.Dock = DockStyle.None
+                gbSQL.Visible = False
+
+            Case "sql"
+                gbSQL.Dock = DockStyle.Fill
+                gbSQL.Visible = True
+
+                grpItems.Visible = False
+                grpItems.Dock = DockStyle.None
+
+                tcMain.SelectTab(2)
+                tpSQL.Enabled = False
         End Select
     End Sub
 
@@ -1828,22 +1653,15 @@ Public Class frmGenerate
         Select Case flag
             Case 1 ' Table columns
                 Try
-                    'Prepare SQL Parameter
-                    SqlParam = New SqlClient.SqlParameter
-                    SqlParam.Direction = ParameterDirection.Input
-                    SqlParam.DbType = DbType.String
-                    SqlParam.Value = lstDetails.SelectedItem
-                    SqlParam.ParameterName = "@table_name"
-                    SqlParam.Size = 384
+                    Dim dtCol As DataTable = DataHelper.GetDataTable(String.Format("sp_columns @table_name='{0}'", lstDetails.SelectedItem), CommandType.Text)
+                    dtCol.TableName = "Tables"
+                    dsColumns.Tables.Add(dtCol)
 
-                    SQLDataAdapter.SelectCommand.Parameters.Add(SqlParam)
-                    'get table columns
-                    SQLDataAdapter.SelectCommand.CommandText = "sp_columns"
-                    SQLDataAdapter.Fill(dsColumns, "Tables")
-                    'get table Primary keys if any
-                    SQLDataAdapter.SelectCommand.CommandText = "sp_pkeys"
-                    SQLDataAdapter.Fill(dsColumns, "Pkeys")
-                    SQLDataAdapter.SelectCommand.Parameters.RemoveAt(0)
+
+                    Dim dtKeys As DataTable = DataHelper.GetDataTable(String.Format("sp_pkeys @table_name='{0}'", lstDetails.SelectedItem), CommandType.Text)
+                    dtKeys.TableName = "Pkeys"
+                    dsColumns.Tables.Add(dtKeys)
+
 
                     dsColumns.Tables("Tables").Columns.Add(New DataColumn("Primary_key"))
                     dsColumns.Tables("Tables").Columns("Primary_key").DefaultValue = "No"
@@ -1872,7 +1690,6 @@ Public Class frmGenerate
 
                     dgvDetails.DataSource = dsColumns.Tables("Tables")
 
-
                     Dim validColumns As New List(Of String) From {"COLUMN_NAME", "TYPE_NAME", "PRECISION", "IS_NULLABLE", "Primary_key"}
 
                     For icol As Integer = 1 To dgvDetails.Columns.Count - 1
@@ -1882,7 +1699,6 @@ Public Class frmGenerate
                             c.Visible = False
                         End If
                     Next
-
 
                     dgvDetails.Columns("Column_Name").DisplayIndex = 1
                     dgvDetails.Columns("Column_Name").Frozen = True
@@ -1907,28 +1723,35 @@ Public Class frmGenerate
                             End If
                         Next
                     End If
+
                 Catch ex As SqlException
                     Throw
                 Catch ex As Exception
                     Throw
                 Finally
+
                     SqlParam = Nothing
                 End Try
 
             Case 2
                 ' Stored Proc parameters
                 Try
-                    SqlParam = New SqlClient.SqlParameter
-                    SqlParam.Direction = ParameterDirection.Input
-                    SqlParam.DbType = DbType.String
-                    SqlParam.Value = lstDetails.SelectedItem
-                    SqlParam.ParameterName = "@procedure_name"
-                    SqlParam.Size = 390
 
-                    SQLDataAdapter.SelectCommand.Parameters.Add(SqlParam)
-                    SQLDataAdapter.SelectCommand.CommandText = "sp_sproc_columns"
-                    SQLDataAdapter.Fill(dsColumns, "Procedure")
-                    SQLDataAdapter.SelectCommand.Parameters.RemoveAt(0)
+                    Dim dtCol As DataTable = DataHelper.GetDataTable(String.Format("sp_sproc_columns @procedure_name='{0}'", lstDetails.SelectedItem), CommandType.Text)
+                    dtCol.TableName = "Procedure"
+                    dsColumns.Tables.Add(dtCol)
+
+                    'SqlParam = New SqlClient.SqlParameter
+                    'SqlParam.Direction = ParameterDirection.Input
+                    'SqlParam.DbType = DbType.String
+                    'SqlParam.Value = lstDetails.SelectedItem
+                    'SqlParam.ParameterName = "@procedure_name"
+                    'SqlParam.Size = 390
+
+                    'SQLDataAdapter.SelectCommand.Parameters.Add(SqlParam)
+                    'SQLDataAdapter.SelectCommand.CommandText = "sp_sproc_columns"
+                    'SQLDataAdapter.Fill(dsColumns, "Procedure")
+                    'SQLDataAdapter.SelectCommand.Parameters.RemoveAt(0)
                     intGridRowCount = dsColumns.Tables("Procedure").Rows.Count
                     'If Not dgDetails.TableStyles.Contains(MyProcedureStyle) Then dgDetails.TableStyles.Add(MyProcedureStyle)
                     dgvDetails.DataSource = dsColumns.Tables("Procedure")
@@ -2058,21 +1881,56 @@ Public Class frmGenerate
         End If
     End Sub
 
+    Private Sub btnLoadSQL_Click(sender As Object, e As EventArgs) Handles btnLoadSQL.Click
+        Try
+            'change command text to system stored procedure
+            SQLDataAdapter.SelectCommand.CommandType = CommandType.Text
+            SQLDataAdapter.SelectCommand.CommandText = txtSQL.Text
+
+            'Dim dt As New DataTable
+            'SQLDataAdapter.Fill(dt)
+
+            If dsDetails.Tables.Contains("SQLScript") Then dsDetails.Tables.Remove("SQLScript")
+
+
+            'Get tables from selected datebase
+            SQLDataAdapter.Fill(dsDetails, "SQLScript")
+
+            If dsDetails.Tables("SQLScript").Rows.Count = 0 Then
+                lstDetails.DataSource = Nothing
+                Throw New ApplicationException("There are no stored procedures in the selected database")
+            Else
+                Dim dt As New DataTable
+                dt.Columns.Add("COLUMN_NAME")
+                dt.Columns.Add("TYPE_NAME")
+                dt.Columns.Add("PRECISION")
+                dt.Columns.Add("IS_NULLABLE")
+                dt.Columns.Add("Primary_key")
+
+                For Each dc As DataColumn In dsDetails.Tables("SQLScript").Columns
+                    Dim dr As DataRow = dt.NewRow
+                    dr("COLUMN_Name") = dc.ColumnName
+                    dr("TYPE_NAME") = GetVBDataType(dc.DataType.ToString)
+                    dt.Rows.Add(dr)
+                Next
+                dgvDetails.DataSource = dt
+
+
+                For i As Integer = 0 To dgvDetails.Rows.Count - 1
+                    'select this row
+                    dgvDetails.Rows(i).Cells(0).Value = True
+                Next
+
+
+            End If
+
+        Catch ex As SqlClient.SqlException
+            Throw
+        Catch ex As Exception
+            Throw
+        End Try
+    End Sub
+
 #End Region 'Methods
 
-
-    Private Sub cmbDatabase_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbDatabase.SelectedIndexChanged
-
-    End Sub
-
-   
-
-    Private Sub dgvDetails_ColumnHeaderMouseClick(sender As Object, e As DataGridViewCellMouseEventArgs) Handles dgvDetails.ColumnHeaderMouseClick
-        If e.ColumnIndex = 0 Then
-            For Each row As DataGridViewRow In dgvDetails.Rows
-                row.Cells(0).Value = If(row.Cells(0).Value = True, False, True)
-            Next
-
-        End If
-    End Sub
 End Class

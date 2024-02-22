@@ -13,10 +13,10 @@ Public Class frmConnection
         Cursor.Current = Cursors.WaitCursor
 
         Try
-    
-                    mdiMain.UtilityConnectionString = txtConnString.Text
-           
-           
+
+            mdiMain.UtilityConnectionString = txtConnString.Text
+            mdiMain.mru_addRecentItem(txtConnString.Text)
+
             If Not String.IsNullOrEmpty(mdiMain.UtilityConnectionString) Then
                 DialogResult = Windows.Forms.DialogResult.OK
                 Me.Close()

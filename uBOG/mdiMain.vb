@@ -62,6 +62,10 @@ Public Class mdiMain
 
     Private Sub mdiMain_Load(sender As Object, e As System.EventArgs) Handles Me.Load
         mru_loadRecentItemList()
+
+        GenerateObjectsToolStripMenuItem1.Visible = False
+        ExecuteBulkScriptsToolStripMenuItem.Visible = False
+
     End Sub
 
     Private Sub mnuMRU_DropDownItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles mnuMRU.DropDownItemClicked
@@ -70,9 +74,14 @@ Public Class mdiMain
             If Not String.IsNullOrEmpty(itm(1)) Then
                 UtilityConnectionString = itm(1)
 
-                Dim frmDB As New frmGenerate
-                frmDB.MdiParent = Me
-                frmDB.Show()
+                'Dim frmDB As New frmGenerate
+                'frmDB.MdiParent = Me
+                'frmDB.Show()
+
+
+                GenerateObjectsToolStripMenuItem1.Visible = True
+                ExecuteBulkScriptsToolStripMenuItem.Visible = True
+
             End If
         Else
             mnuMRU.DropDownItems.Clear()
@@ -81,7 +90,7 @@ Public Class mdiMain
         
     End Sub
 
-    Private Sub mru_addRecentItem(recentItem As String)
+    Public Sub mru_addRecentItem(recentItem As String)
         If Not mnuMRU.DropDownItems.ContainsKey(recentItem) AndAlso mnuMRU.DropDownItems.Count < mruMAX Then
             mnuMRU.DropDownItems.Add(String.Format("{0} : {1}", mnuMRU.DropDownItems.Count + 1, recentItem))
         End If
@@ -130,31 +139,59 @@ Public Class mdiMain
         End
     End Sub
 
-#End Region 'Methods
 
-    Private Sub RunScriptsToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles RunScriptsToolStripMenuItem1.Click
 
-        Dim objDataConnectionDialog As DataConnectionDialog
-        objDataConnectionDialog = New DataConnectionDialog
-        DataSource.AddStandardDataSources(objDataConnectionDialog)
+    Private Sub RunScriptsToolStripMenuItem_Click(sender As Object, e As EventArgs)
 
-        If DataConnectionDialog.Show(objDataConnectionDialog) = Windows.Forms.DialogResult.OK Then
-            UtilityConnectionString = objDataConnectionDialog.ConnectionString
+    End Sub
+
+    Public Sub updateStatus(msg As String)
+        mainStatus.Text = msg
+    End Sub
+
+    Private Sub BulkRenameToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles BulkRenameToolStripMenuItem.Click
+
+        Dim f As New frmRename
+        f.MdiParent = Me
+        f.Show()
+    End Sub
+
+    Private Sub GenerateObjectsToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles GenerateObjectsToolStripMenuItem1.Click
+        Dim frmDB As New frmGenerate
+        frmDB.MdiParent = Me
+        frmDB.Show()
+    End Sub
+
+    Private Sub ExecuteBulkScriptsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ExecuteBulkScriptsToolStripMenuItem.Click
+        Dim f As New frmscripts
+        f.MdiParent = Me
+
+        If String.IsNullOrEmpty(UtilityConnectionString) Then
+            Dim objDataConnectionDialog As DataConnectionDialog
+            objDataConnectionDialog = New DataConnectionDialog
+            DataSource.AddStandardDataSources(objDataConnectionDialog)
+
+            If DataConnectionDialog.Show(objDataConnectionDialog) = Windows.Forms.DialogResult.OK Then
+                UtilityConnectionString = objDataConnectionDialog.ConnectionString
+                objDataConnectionDialog.Dispose()
+                ' Call sub to add this file as an MRU
+
+                mru_addRecentItem(UtilityConnectionString)
+
+                If mnuMRU.Visible = False Then mnuMRU.Visible = True
+
+
+
+                f.Show()
+            End If
+
             objDataConnectionDialog.Dispose()
-            ' Call sub to add this file as an MRU
+        Else
 
-            mru_addRecentItem(UtilityConnectionString)
-
-            If mnuMRU.Visible = False Then mnuMRU.Visible = True
-
-
-            Dim f As New frmscripts
-            f.MdiParent = Me
             f.Show()
         End If
 
-        objDataConnectionDialog.Dispose()
 
-       
     End Sub
+#End Region 'Methods
 End Class

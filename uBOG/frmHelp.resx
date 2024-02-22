@@ -123,8 +123,10 @@
 USAGE:  Create POCO objects and t-sql scripts for use in VB web/windows apps.
 
 Changeset:
-07.29.2013 - Fix class generation when using selected columns.
-10.20.2012 - Added HTML form generation option.</value>
+05.24.2019:  Combined File &amp; DB operations into 1 app.
+07.29.2013:  Fix class generation when using selected columns.
+10.20.2012:  Added HTML form generation option.
+11.15.2021:  Add C# class generation</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">

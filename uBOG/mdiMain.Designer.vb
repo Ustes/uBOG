@@ -35,9 +35,11 @@ Partial Class mdiMain
         Me.mnuMRU = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
         Me.QuitToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.FileOperationsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.BulkRenameToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.HelpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.RunScriptsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.RunScriptsToolStripMenuItem1 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.GenerateObjectsToolStripMenuItem1 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ExecuteBulkScriptsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.StatusStrip.SuspendLayout()
         Me.MenuStrip1.SuspendLayout()
         Me.SuspendLayout()
@@ -62,7 +64,7 @@ Partial Class mdiMain
         '
         'MenuStrip1
         '
-        Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ConnectToolStripMenuItem, Me.HelpToolStripMenuItem, Me.RunScriptsToolStripMenuItem})
+        Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ConnectToolStripMenuItem, Me.FileOperationsToolStripMenuItem, Me.HelpToolStripMenuItem, Me.GenerateObjectsToolStripMenuItem1, Me.ExecuteBulkScriptsToolStripMenuItem})
         Me.MenuStrip1.Location = New System.Drawing.Point(0, 0)
         Me.MenuStrip1.Name = "MenuStrip1"
         Me.MenuStrip1.Size = New System.Drawing.Size(874, 24)
@@ -73,14 +75,15 @@ Partial Class mdiMain
         '
         Me.ConnectToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ConnectToDatabaseToolStripMenuItem, Me.ConnectWithConnectionstringToolStripMenuItem, Me.mnuMRU, Me.ToolStripSeparator1, Me.QuitToolStripMenuItem})
         Me.ConnectToolStripMenuItem.Name = "ConnectToolStripMenuItem"
-        Me.ConnectToolStripMenuItem.Size = New System.Drawing.Size(64, 20)
-        Me.ConnectToolStripMenuItem.Text = "Connect"
+        Me.ConnectToolStripMenuItem.Size = New System.Drawing.Size(128, 20)
+        Me.ConnectToolStripMenuItem.Text = "Database Operations"
         '
         'ConnectToDatabaseToolStripMenuItem
         '
         Me.ConnectToDatabaseToolStripMenuItem.Name = "ConnectToDatabaseToolStripMenuItem"
         Me.ConnectToDatabaseToolStripMenuItem.Size = New System.Drawing.Size(244, 22)
         Me.ConnectToDatabaseToolStripMenuItem.Text = "Connect to Database"
+        Me.ConnectToDatabaseToolStripMenuItem.Visible = False
         '
         'ConnectWithConnectionstringToolStripMenuItem
         '
@@ -106,24 +109,37 @@ Partial Class mdiMain
         Me.QuitToolStripMenuItem.Size = New System.Drawing.Size(244, 22)
         Me.QuitToolStripMenuItem.Text = "Quit"
         '
+        'FileOperationsToolStripMenuItem
+        '
+        Me.FileOperationsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.BulkRenameToolStripMenuItem})
+        Me.FileOperationsToolStripMenuItem.Name = "FileOperationsToolStripMenuItem"
+        Me.FileOperationsToolStripMenuItem.Size = New System.Drawing.Size(98, 20)
+        Me.FileOperationsToolStripMenuItem.Text = "File Operations"
+        '
+        'BulkRenameToolStripMenuItem
+        '
+        Me.BulkRenameToolStripMenuItem.Name = "BulkRenameToolStripMenuItem"
+        Me.BulkRenameToolStripMenuItem.Size = New System.Drawing.Size(143, 22)
+        Me.BulkRenameToolStripMenuItem.Text = "Bulk Rename"
+        '
         'HelpToolStripMenuItem
         '
+        Me.HelpToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right
         Me.HelpToolStripMenuItem.Name = "HelpToolStripMenuItem"
         Me.HelpToolStripMenuItem.Size = New System.Drawing.Size(44, 20)
         Me.HelpToolStripMenuItem.Text = "Help"
         '
-        'RunScriptsToolStripMenuItem
+        'GenerateObjectsToolStripMenuItem1
         '
-        Me.RunScriptsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.RunScriptsToolStripMenuItem1})
-        Me.RunScriptsToolStripMenuItem.Name = "RunScriptsToolStripMenuItem"
-        Me.RunScriptsToolStripMenuItem.Size = New System.Drawing.Size(54, 20)
-        Me.RunScriptsToolStripMenuItem.Text = "Scripts"
+        Me.GenerateObjectsToolStripMenuItem1.Name = "GenerateObjectsToolStripMenuItem1"
+        Me.GenerateObjectsToolStripMenuItem1.Size = New System.Drawing.Size(109, 20)
+        Me.GenerateObjectsToolStripMenuItem1.Text = "Generate Objects"
         '
-        'RunScriptsToolStripMenuItem1
+        'ExecuteBulkScriptsToolStripMenuItem
         '
-        Me.RunScriptsToolStripMenuItem1.Name = "RunScriptsToolStripMenuItem1"
-        Me.RunScriptsToolStripMenuItem1.Size = New System.Drawing.Size(152, 22)
-        Me.RunScriptsToolStripMenuItem1.Text = "Run Script(s)"
+        Me.ExecuteBulkScriptsToolStripMenuItem.Name = "ExecuteBulkScriptsToolStripMenuItem"
+        Me.ExecuteBulkScriptsToolStripMenuItem.Size = New System.Drawing.Size(148, 20)
+        Me.ExecuteBulkScriptsToolStripMenuItem.Text = "Execute Bulk SQL Scripts"
         '
         'mdiMain
         '
@@ -136,7 +152,7 @@ Partial Class mdiMain
         Me.IsMdiContainer = True
         Me.MainMenuStrip = Me.MenuStrip1
         Me.Name = "mdiMain"
-        Me.Text = "u3 SQL Business Object Generator"
+        Me.Text = "UseThis BOG - Programming Tools"
         Me.StatusStrip.ResumeLayout(False)
         Me.StatusStrip.PerformLayout()
         Me.MenuStrip1.ResumeLayout(False)
@@ -156,7 +172,8 @@ Partial Class mdiMain
     Friend WithEvents mnuMRU As System.Windows.Forms.ToolStripMenuItem
     Friend WithEvents ToolStripSeparator1 As System.Windows.Forms.ToolStripSeparator
     Friend WithEvents QuitToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
-    Friend WithEvents RunScriptsToolStripMenuItem As System.Windows.Forms.ToolStripMenuItem
-    Friend WithEvents RunScriptsToolStripMenuItem1 As System.Windows.Forms.ToolStripMenuItem
-
+    Friend WithEvents FileOperationsToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents BulkRenameToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents GenerateObjectsToolStripMenuItem1 As ToolStripMenuItem
+    Friend WithEvents ExecuteBulkScriptsToolStripMenuItem As ToolStripMenuItem
 End Class

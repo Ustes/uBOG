@@ -1,4 +1,6 @@
-﻿Public Class frmBrowser
+﻿Imports Microsoft.Win32
+
+Public Class frmBrowser
     Public Property WebContent() As String
         Get
             Return WebBrowser1.DocumentText
@@ -12,4 +14,5 @@
     Private Sub frmBrowser_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
 
     End Sub
+
 End Class

@@ -4,17 +4,17 @@
   <description asmv2:publisher="UseThisBOG" asmv2:product="UseThisBOG" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <deployment install="true" mapFileExtensions="true" />
   <compatibleFrameworks xmlns="urn:schemas-microsoft-com:clickonce.v2">
-    <framework targetVersion="4.5" profile="Full" supportedRuntime="4.0.30319" />
+    <framework targetVersion="4.8" profile="Full" supportedRuntime="4.0.30319" />
   </compatibleFrameworks>
   <dependency>
-    <dependentAssembly dependencyType="install" codebase="UseThisBOG.exe.manifest" size="24232">
+    <dependentAssembly dependencyType="install" codebase="UseThisBOG.exe.manifest" size="16164">
       <assemblyIdentity name="UseThisBOG.exe" version="1.0.0.0" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="msil" type="win32" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>qSlZtVpJ/2/rl5q2cqX2sg7zW2U2kjNQ10WKVkSAGE8=</dsig:DigestValue>
+        <dsig:DigestValue>nsk9VeNijAFH0BUM0NuYWYbjnpEC/hfVke55suLd93w=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
