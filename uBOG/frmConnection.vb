@@ -19,6 +19,8 @@ Public Class frmConnection
 
             If Not String.IsNullOrEmpty(mdiMain.UtilityConnectionString) Then
                 DialogResult = Windows.Forms.DialogResult.OK
+                mdiMain.GenerateObjectsToolStripMenuItem1.Visible = True
+                mdiMain.ExecuteBulkScriptsToolStripMenuItem.Visible = True
                 Me.Close()
             Else
                 DialogResult = Windows.Forms.DialogResult.Cancel

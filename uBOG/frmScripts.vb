@@ -1,5 +1,6 @@
 ﻿Imports System.IO
-Imports System.Data.SqlClient
+'Imports System.Data.SqlClient
+Imports Microsoft.Data.SqlClient
 Imports Microsoft.SqlServer.Server
 Imports Microsoft.SqlServer.Management.Smo
 Imports Microsoft.SqlServer.Management.Common
