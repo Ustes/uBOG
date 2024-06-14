@@ -62,5 +62,5 @@ D:\_workspaces\uBOG\uBOG\obj\Release\u3SQL_BOG.vbproj.GenerateResource.cache
 D:\_workspaces\uBOG\uBOG\obj\Release\u3SQL_BOG.vbproj.CoreCompileInputs.cache
 D:\_workspaces\uBOG\uBOG\obj\Release\UseThisBOG.exe.manifest
 D:\_workspaces\uBOG\uBOG\obj\Release\UseThisBOG.application
-D:\_workspaces\uBOG\uBOG\obj\Release\u3SQL_BOG.vbproj.CopyComplete
 D:\_workspaces\uBOG\uBOG\obj\Release\UseThisBOG.exe
+D:\_workspaces\uBOG\uBOG\obj\Release\u3SQL_BOG.vbproj.Up2Date

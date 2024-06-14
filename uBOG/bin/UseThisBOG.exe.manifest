@@ -4,7 +4,7 @@
   <description asmv2:iconFile="u3_logo.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="UseThisBOG" version="1.0.8818.8825" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="UseThisBOG" version="1.0.8930.15981" language="neutral" processorArchitecture="msil" />
     <commandLine file="UseThisBOG.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -187,14 +187,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Microsoft.VisualStudio.ProjectAggregator.dll" size="14272">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Microsoft.VisualStudio.ProjectAggregator.dll" size="14264">
       <assemblyIdentity name="Microsoft.VisualStudio.ProjectAggregator" version="8.0.0.0" publicKeyToken="B03F5F7F11D50A3A" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>7FSadHRzVnKSS9CsXu8k2CzzuHIaAymQyrEwtKZ964k=</dsig:DigestValue>
+        <dsig:DigestValue>y3tYxjYbo4eC5gaBwILD/4Uhs1qRBinxnJ9zfRwNf7E=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -236,16 +236,25 @@
   </dependency>
   <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="UseThisBOG.exe" size="140288">
-      <assemblyIdentity name="UseThisBOG" version="1.0.8818.8825" language="neutral" processorArchitecture="msil" />
+      <assemblyIdentity name="UseThisBOG" version="1.0.8930.15981" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>PWjb1uNnm+X0ADVL4Kjse1DBMECUc4RpgFMnsm9C5vo=</dsig:DigestValue>
+        <dsig:DigestValue>aE+8QGrfgCi+omSegJtUwsvKoumh2apsUmyj8MaaLCg=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
+  <file name=".gitignore" size="13">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+      <dsig:DigestValue>LNShQPUdqn9nD8h0389n4NGq+JgU7ZpJBjRKu9g37D4=</dsig:DigestValue>
+    </hash>
+  </file>
   <file name="Ball Green.ico" size="161862">
     <hash>
       <dsig:Transforms>
