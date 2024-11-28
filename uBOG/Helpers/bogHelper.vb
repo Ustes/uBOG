@@ -170,12 +170,12 @@ Public Class bogHelper
                     End If
                 Next
 
-                strBuilder.Append("#region Properties" & vbCrLf)
+                'strBuilder.Append("#region Properties" & vbCrLf)
                 strBuilder.Append(sbPrivs.ToString)
                 strBuilder.Append(vbCrLf)
                 strBuilder.Append(sbProps.ToString)
                 strBuilder.Append(vbCrLf)
-                strBuilder.Append("#endregion" & vbCrLf) 'Properties region ends
+                'strBuilder.Append("#endregion" & vbCrLf) 'Properties region ends
                 strBuilder.Append("}" & vbCrLf)
             Case Else
                 If bAddSerializable Then
@@ -558,10 +558,10 @@ Public Class bogHelper
 
     'Performs data type conversions from SQL server type to VB type.
     Public Shared Function GetVBDataType(ByVal typeName As String) As String
-        Select Case typeName
-            Case "numeric", "int", "System.Int32"
+        Select Case typeName.ToLower
+            Case "numeric".ToLower, "int".ToLower, "System.Int32".ToLower
                 Return "Integer"
-            Case "nvarchar", "varchar", "ntext", "text", "System.String", "System.DateTime"
+            Case "nvarchar", "varchar", "ntext", "text", "System.String".ToLower, "System.DateTime".ToLower
                 Return "String"
             Case "money", "decimal"
                 Return "Single"
@@ -571,11 +571,11 @@ Public Class bogHelper
                 Return "Date"
             Case "byte"
                 Return "Byte"
-            Case "bit", "System.Boolean"
+            Case "bit", "System.Boolean".ToLower
                 Return "Boolean"
             Case "char"
                 Return "Char"
-            Case "float", "System.Decimal"
+            Case "float", "System.Decimal".ToLower
                 Return "Double"
             Case Else
                 'Add other missing data types
@@ -583,10 +583,10 @@ Public Class bogHelper
         End Select
     End Function
     Public Shared Function GetCSharpDataType(ByVal typeName As String) As String
-        Select Case typeName
-            Case "numeric", "int", "System.Int32"
+        Select Case typeName.ToLower
+            Case "numeric", "int", "System.Int32".ToLower, "int identity", "integer"
                 Return "int"
-            Case "nvarchar", "varchar", "ntext", "text", "System.String", "System.DateTime"
+            Case "nvarchar", "varchar", "ntext", "text", "System.String".ToLower, "System.DateTime".ToLower, "string"
                 Return "string?"
             Case "money", "decimal"
                 Return "decimal"
@@ -596,11 +596,11 @@ Public Class bogHelper
                 Return "DateTime"
             Case "byte"
                 Return "byte"
-            Case "bit", "System.Boolean"
+            Case "bit", "System.Boolean".ToLower, "boolean"
                 Return "bool"
             Case "char"
                 Return "char"
-            Case "float", "System.Decimal"
+            Case "float", "System.Decimal".ToLower
                 Return "double"
             Case Else
                 'Add other missing data types

@@ -4,7 +4,7 @@
   <description asmv2:iconFile="u3_logo.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="UseThisBOG" version="1.0.8931.14852" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="UseThisBOG" version="1.0.9098.10040" language="neutral" processorArchitecture="msil" />
     <commandLine file="UseThisBOG.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -703,14 +703,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Microsoft.VisualStudio.ProjectAggregator.dll" size="14256">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Microsoft.VisualStudio.ProjectAggregator.dll" size="14264">
       <assemblyIdentity name="Microsoft.VisualStudio.ProjectAggregator" version="8.0.0.0" publicKeyToken="B03F5F7F11D50A3A" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>Nwt4eg7bU4EUMkNAbex/rg+3Q7Z9UmGsz3OMwA3XE5Y=</dsig:DigestValue>
+        <dsig:DigestValue>M4j4yxWDnZsczncVFgKYDaNJTWNVoyvdXLbuLxruaS4=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -967,14 +967,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="UseThisBOG.exe" size="146432">
-      <assemblyIdentity name="UseThisBOG" version="1.0.8931.14852" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="UseThisBOG.exe" size="145408">
+      <assemblyIdentity name="UseThisBOG" version="1.0.9098.10040" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>eEN9e1pp2LONa4MsJ+p8mjRI9HCJzDRa/rs3hcwt+nI=</dsig:DigestValue>
+        <dsig:DigestValue>UlruXo69EsnT5ufVP9a6/zfXZN0dih6SVF0cL6y72a8=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
